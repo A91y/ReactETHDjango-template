@@ -17,17 +17,9 @@ const App = () => {
   const connectWallet = async () => {
     if (window.ethereum) {
       try {
-        // const accounts = await window.ethereum.request({
-        //   method: "eth_requestAccounts",
-        // });
-        // setAccount(accounts[0]);
-        // localStorage.setItem("isWalletConnected", true);
-        // localStorage.setItem("account", accounts[0]);
-        // console.log("Wallet connected: ", accounts[0]);
         const provider = new ethers.providers.Web3Provider(window.ethereum);
         setProvider(provider);
         provider.send("eth_requestAccounts", []).then(async() => {
-          // await accountChangedHandler(provider.getSigner());
           setAccount(await provider.getSigner().getAddress());
           localStorage.setItem("isWalletConnected", true);
           localStorage.setItem("account", await provider.getSigner().getAddress());
@@ -41,13 +33,6 @@ const App = () => {
     }
   };
 
-  // const accountChangedHandler = async (newAccount) => {
-  //   const address = await newAccount.getAddress();
-  //   setDefaultAccount(address);
-  //   const balance = await newAccount.getBalance();
-  //   setUserBalance(ethers.formatEther(balance));
-  //   await getuserBalance(address);
-  // };
 
   const disconnectWallet = () => {
     setAccount(null);
@@ -64,11 +49,7 @@ const App = () => {
       console.log("Requested by user: ", account);
       const response = await client.get("/generate-message/");
       const message = response.data.message;
-      console.log(provider, !provider)
-      if(!provider){
-        const newProvider = new ethers.providers.Web3Provider(window.ethereum);
-        setProvider(provider);
-      }
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
       const signature = await signer.signMessage(message);
       const payload = {
@@ -78,11 +59,13 @@ const App = () => {
       };
       console.log("Payload: ", payload);
       const verificationResponse = await client.post(
-        "/verify-signature/",
+        "token/create/",
         payload
       );
+      console.log("Verification response: ", verificationResponse.data);
       if (verificationResponse.data.status === "authenticated") {
         console.log("User authenticated");
+        localStorage.setItem("token", verificationResponse.data.token);
         setAuthenticated(true);
         fetchBlogs();
       } else {
@@ -90,6 +73,28 @@ const App = () => {
       }
     } catch (error) {
       console.error("Error during authentication", error);
+    }
+  };
+
+  const verifyAuthentication = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const payload = {
+        token,
+      };
+      const response = await client.post("/token/verify/", payload, {
+        headers: {
+          Authorization: `Token ${token}`,
+        },
+      });
+      if (response.data.status === "authenticated") {
+        console.log("User authenticated");
+        setAuthenticated(true);
+      }
+    } catch (error) {
+      console.error("Error verifying authentication", error);
     }
   };
 
@@ -136,6 +141,7 @@ const App = () => {
       setAccount(savedAccount);
       console.log("Wallet connected: ", savedAccount);
     }
+    verifyAuthentication();
     fetchBlogs();
   }, []);
 
