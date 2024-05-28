@@ -5,7 +5,6 @@ import "./App.css";
 // const provider = new ethers.providers.Web3Provider(window.ethereum);
 const App = () => {
   const [account, setAccount] = useState(null);
-  const [provider, setProvider] = useState(null);
   const [authenticated, setAuthenticated] = useState(false);
   const [blogs, setBlogs] = useState([]);
   const [title, setTitle] = useState("");
@@ -14,66 +13,67 @@ const App = () => {
     baseURL: "http://localhost:8000",
   });
 
+  const clearLocalStorage = () => {
+    localStorage.removeItem("isWalletConnected");
+    localStorage.removeItem("account");
+    localStorage.removeItem("token");
+    setAccount(null);
+    setAuthenticated(false);
+  };
+
   const connectWallet = async () => {
     if (window.ethereum) {
       try {
         const provider = new ethers.providers.Web3Provider(window.ethereum);
-        setProvider(provider);
-        provider.send("eth_requestAccounts", []).then(async() => {
-          setAccount(await provider.getSigner().getAddress());
+        await provider.send("eth_requestAccounts", []).then(async () => {
           localStorage.setItem("isWalletConnected", true);
-          localStorage.setItem("account", await provider.getSigner().getAddress());
-          console.log("Wallet connected: ", await provider.getSigner().getAddress());
+          const address = await provider.getSigner().getAddress();
+          setAccount(address);
+          localStorage.setItem("account", address);
+          console.log("Wallet connected: ", address);
         });
+        try {
+          const address = localStorage.getItem("account");
+          console.log("Requested by user: ", address);
+          const response = await client.get("/generate-message/");
+          const message = response.data.message;
+          const signer = provider.getSigner();
+          const signature = await signer.signMessage(message);
+          const payload = {
+            user_address: address,
+            signature,
+            login_message: message,
+          };
+          console.log("Payload: ", payload);
+          const verificationResponse = await client.post(
+            "token/create/",
+            payload
+          );
+          console.log("Verification response: ", verificationResponse.data);
+          if (verificationResponse.data.status === "authenticated") {
+            console.log("User authenticated");
+            localStorage.setItem("token", verificationResponse.data.token);
+            setAuthenticated(true);
+            fetchBlogs();
+          } else {
+            console.log("Authentication failed");
+          }
+        } catch (error) {
+          console.error("Error during authentication", error);
+          clearLocalStorage();
+        }
       } catch (error) {
         console.error("User rejected the request.", error);
+        clearLocalStorage();
       }
     } else {
       console.error("Install a wallet extension like MetaMask.");
     }
   };
 
-
   const disconnectWallet = () => {
-    setAccount(null);
-    setAuthenticated(false);
-    localStorage.removeItem("isWalletConnected");
-    localStorage.removeItem("account");
+    clearLocalStorage();
     console.log("Wallet disconnected");
-  };
-
-  const authenticate = async () => {
-    if (!account) return;
-
-    try {
-      console.log("Requested by user: ", account);
-      const response = await client.get("/generate-message/");
-      const message = response.data.message;
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const signer = provider.getSigner();
-      const signature = await signer.signMessage(message);
-      const payload = {
-        user_address: account,
-        signature,
-        login_message: message,
-      };
-      console.log("Payload: ", payload);
-      const verificationResponse = await client.post(
-        "token/create/",
-        payload
-      );
-      console.log("Verification response: ", verificationResponse.data);
-      if (verificationResponse.data.status === "authenticated") {
-        console.log("User authenticated");
-        localStorage.setItem("token", verificationResponse.data.token);
-        setAuthenticated(true);
-        fetchBlogs();
-      } else {
-        console.log("Authentication failed");
-      }
-    } catch (error) {
-      console.error("Error during authentication", error);
-    }
   };
 
   const verifyAuthentication = async () => {
@@ -94,7 +94,8 @@ const App = () => {
         setAuthenticated(true);
       }
     } catch (error) {
-      console.error("Error verifying authentication", error);
+      clearLocalStorage();
+      console.log("Authentication Expired!");
     }
   };
 
@@ -152,7 +153,6 @@ const App = () => {
       ) : (
         <button onClick={connectWallet}>Connect Wallet</button>
       )}
-      <button onClick={authenticate}>Authenticate</button>
 
       {authenticated && <p>Welcome, {account}</p>}
 

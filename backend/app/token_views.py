@@ -28,7 +28,7 @@ class TokenCreateView(View):
                 'address': user_address,
                 'signature': signature,
                 'login_message': login_message,
-                'expiry_time': (datetime.now() + timedelta(days=1)).timestamp()
+                'expiry_time': (datetime.now() + timedelta(days=10)).timestamp()
             }
             print(payload)
             encoded_message = encode_defunct(text=login_message)
