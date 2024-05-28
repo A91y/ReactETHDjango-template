@@ -1,6 +1,21 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { client } from "../services/api";
 import BlogPost from "./BlogPost";
-const BlogPosts = ({ blogs }) => {
+
+const BlogPosts = ({ newBlog }) => {
+  const [blogs, setBlogs] = useState([]);
+  const fetchBlogs = async () => {
+    try {
+      const response = await client.get("/blogs/");
+      setBlogs(response.data.blogs);
+    } catch (error) {
+      console.error("Error fetching blogs", error);
+    }
+  };
+  useEffect(() => {
+    fetchBlogs();
+  }, [newBlog]);
+
   return (
     <>
       <h2>Blog Posts</h2>

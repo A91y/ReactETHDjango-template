@@ -4,10 +4,11 @@ import { ethers } from "ethers";
 import "./App.css";
 import BlogPosts from "./components/BlogPosts";
 import CreateBlogPost from "./components/CreateBlogPost";
+
 const App = () => {
   const [account, setAccount] = useState(null);
   const [authenticated, setAuthenticated] = useState(false);
-  const [blogs, setBlogs] = useState([]);
+  const [newBlog, setNewBlog] = useState(false);
 
   const clearLocalStorage = () => {
     localStorage.removeItem("isWalletConnected");
@@ -49,7 +50,6 @@ const App = () => {
             console.log("User authenticated");
             localStorage.setItem("token", verificationResponse.data.token);
             setAuthenticated(true);
-            fetchBlogs();
           } else {
             console.log("Authentication failed");
           }
@@ -94,43 +94,6 @@ const App = () => {
     }
   };
 
-  const fetchBlogs = async () => {
-    try {
-      const response = await client.get("/blogs/");
-      setBlogs(response.data.blogs);
-    } catch (error) {
-      console.error("Error fetching blogs", error);
-    }
-  };
-
-  const createBlog = async () => {
-    if (!authenticated) return alert("Please authenticate first");
-
-    try {
-      const payload = {
-        title,
-        content,
-      };
-      console.log("Payload: ", payload);
-      const token = localStorage.getItem("token");
-      const response = await client.post("/blogs/create/", payload, {
-        headers: {
-          Authorization: `Token ${token}`,
-        },
-      });
-
-      if (response.status === 200) {
-        setTitle("");
-        setContent("");
-        fetchBlogs();
-      } else {
-        console.error("Failed to create blog");
-      }
-    } catch (error) {
-      console.error("Error creating blog", error);
-    }
-  };
-
   useEffect(() => {
     const isWalletConnected = localStorage.getItem("isWalletConnected");
     const savedAccount = localStorage.getItem("account");
@@ -139,7 +102,6 @@ const App = () => {
       console.log("Wallet connected: ", savedAccount);
     }
     verifyAuthentication();
-    fetchBlogs();
   }, []);
 
   return (
@@ -152,9 +114,11 @@ const App = () => {
 
       {authenticated && <p>Welcome, {account}</p>}
 
-      {authenticated && <CreateBlogPost createBlog={createBlog} />}
+      {authenticated && (
+        <CreateBlogPost setNewBlog={setNewBlog} newBlog={newBlog} />
+      )}
 
-      <BlogPosts blogs={blogs} />
+      <BlogPosts newBlog={newBlog} />
     </div>
   );
 };
