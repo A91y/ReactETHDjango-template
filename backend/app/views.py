@@ -1,4 +1,3 @@
-# views.py
 import json
 import uuid
 from django.shortcuts import get_object_or_404
@@ -60,16 +59,15 @@ def verify_signature(request):
 def create_blog(request):
     if request.method == 'POST':
         raw_data = request.body
-        print("raw_data", raw_data)
         body_unicode = raw_data.decode('utf-8')
         body = json.loads(body_unicode)
         title = body['title']
         content = body['content']
+        user_address = request.user_address
         if not title or not content or title.strip() == '' or content.strip() == '':
             return JsonResponse({'error': 'Title and content are required.'}, status=400)
         # author = request.session['user_address']
-        author = Profile.objects.get(user_address="0x0")
-        print(author)
+        author = Profile.objects.get(user_address=user_address)
         blog = Blog.objects.create(title=title, content=content, author=author)
         print("--------------------------")
         return JsonResponse({'id': blog.id, 'title': blog.title, 'content': blog.content, 'author': blog.author.user_address, 'author_name': blog.author.name})

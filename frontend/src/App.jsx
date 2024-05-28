@@ -47,7 +47,7 @@ const App = () => {
           console.log("Payload: ", payload);
           const verificationResponse = await client.post(
             "token/create/",
-            payload
+            payload,
           );
           console.log("Verification response: ", verificationResponse.data);
           if (verificationResponse.data.status === "authenticated") {
@@ -116,8 +116,16 @@ const App = () => {
         title,
         content,
       };
+      const headers = {
+        Authorization: `Token ${localStorage.getItem("token")}`,
+      };
       console.log("Payload: ", payload);
-      const response = await client.post("/blogs/create/", payload);
+      const token = localStorage.getItem("token");
+      const response = await client.post("/blogs/create/", payload, {
+        headers: {
+          Authorization: `Token ${token}`,
+        },
+      });
 
       if (response.status === 200) {
         setTitle("");

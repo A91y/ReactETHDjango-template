@@ -12,13 +12,10 @@ def require_authentication(view_func):
             try:
                 # Split the authorization header to extract the token
                 token = auth_header.split(' ')[1]
-
                 # Decode and verify the token using the secret key
                 decoded_token = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
-
                 # Attach the decoded token data to the request object
                 request.user_address = decoded_token.get('address')
-
                 # Check if the token has expired
                 if decoded_token.get('expiry_time') < datetime.now().timestamp():
                     return JsonResponse({'error': 'Token expired'}, status=401)
