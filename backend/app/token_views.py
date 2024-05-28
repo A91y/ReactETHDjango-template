@@ -78,10 +78,3 @@ class TokenVerifyView(View):
         except jwt.InvalidTokenError:
             # Invalid token
             return JsonResponse({'error': 'Invalid token'}, status=401)
-
-
-# {
-#   "user_address": "0x537eb071548e59d73af8a4421f5ea65a8e160818",
-#   "signature": "0x298ef9e7ab794f8965f62d6f03e00baae58c2f6c8f5aa951e95c9c9bfaf43f091cb793ce61d95368e74d4fbff372d249950f069f29043aa500de1d8e1a5bfc601b",
-#   "login_message": "Login request: a4dd0791-5cd8-4d87-b688-f8e8e092ccd7"
-# }
