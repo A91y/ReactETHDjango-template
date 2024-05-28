@@ -46,13 +46,6 @@ def verify_signature(request):
     else:
         return JsonResponse({'error': 'Invalid request method.'}, status=405)
 
-# def require_authentication(view_func):
-#     def wrapper(request, *args, **kwargs):
-#         if 'user_address' not in request.session:
-#             return JsonResponse({'error': 'Unauthorized'}, status=401)
-#         return view_func(request, *args, **kwargs)
-#     return wrapper
-
 
 @csrf_exempt
 @require_authentication
@@ -111,7 +104,3 @@ def delete_blog(request, blog_id):
         return JsonResponse({'status': 'deleted'})
     else:
         return JsonResponse({'error': 'Invalid request method.'}, status=405)
-
-
-def test_view(request):
-    return JsonResponse({"header": request.headers.get('Authorization', None)})

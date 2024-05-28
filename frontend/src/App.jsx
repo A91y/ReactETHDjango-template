@@ -1,17 +1,13 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { client } from "/src/services/api";
 import { ethers } from "ethers";
 import "./App.css";
-// const provider = new ethers.providers.Web3Provider(window.ethereum);
+import BlogPosts from "./components/BlogPosts";
+import CreateBlogPost from "./components/CreateBlogPost";
 const App = () => {
   const [account, setAccount] = useState(null);
   const [authenticated, setAuthenticated] = useState(false);
   const [blogs, setBlogs] = useState([]);
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const client = axios.create({
-    baseURL: "http://localhost:8000",
-  });
 
   const clearLocalStorage = () => {
     localStorage.removeItem("isWalletConnected");
@@ -34,7 +30,6 @@ const App = () => {
         });
         try {
           const address = localStorage.getItem("account");
-          console.log("Requested by user: ", address);
           const response = await client.get("/generate-message/");
           const message = response.data.message;
           const signer = provider.getSigner();
@@ -47,7 +42,7 @@ const App = () => {
           console.log("Payload: ", payload);
           const verificationResponse = await client.post(
             "token/create/",
-            payload,
+            payload
           );
           console.log("Verification response: ", verificationResponse.data);
           if (verificationResponse.data.status === "authenticated") {
@@ -116,9 +111,6 @@ const App = () => {
         title,
         content,
       };
-      const headers = {
-        Authorization: `Token ${localStorage.getItem("token")}`,
-      };
       console.log("Payload: ", payload);
       const token = localStorage.getItem("token");
       const response = await client.post("/blogs/create/", payload, {
@@ -136,12 +128,8 @@ const App = () => {
       }
     } catch (error) {
       console.error("Error creating blog", error);
-      alert("Error creating blog");
     }
   };
-
-  const handleTitleChange = (e) => setTitle(e.target.value);
-  const handleContentChange = (e) => setContent(e.target.value);
 
   useEffect(() => {
     const isWalletConnected = localStorage.getItem("isWalletConnected");
@@ -164,38 +152,9 @@ const App = () => {
 
       {authenticated && <p>Welcome, {account}</p>}
 
-      {authenticated && (
-        <div>
-          <h2>Create a Blog Post</h2>
-          <input
-            type="text"
-            value={title}
-            onChange={handleTitleChange}
-            placeholder="Title"
-          />
-          <textarea
-            value={content}
-            onChange={handleContentChange}
-            placeholder="Content"
-          ></textarea>
-          <button onClick={createBlog}>Create Blog</button>
-        </div>
-      )}
+      {authenticated && <CreateBlogPost createBlog={createBlog} />}
 
-      <h2>Blog Posts</h2>
-      {blogs.length > 0 ? (
-        <div>
-          {blogs.map((blog) => (
-            <div key={blog.id}>
-              <h3>{blog.title}</h3>
-              <p>{blog.content}</p>
-              <hr />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p>No blogs available</p>
-      )}
+      <BlogPosts blogs={blogs} />
     </div>
   );
 };
