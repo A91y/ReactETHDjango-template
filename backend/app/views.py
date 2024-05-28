@@ -1,10 +1,7 @@
 import json
 import uuid
-from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from web3 import Web3
-from eth_account.messages import encode_defunct
 from .models import Blog, Profile
 from .decorators import require_authentication
 
@@ -29,7 +26,6 @@ def create_blog(request):
             return JsonResponse({'error': 'Title and content are required.'}, status=400)
         author = Profile.objects.get(user_address=user_address)
         blog = Blog.objects.create(title=title, content=content, author=author)
-        print("--------------------------")
         return JsonResponse({'id': blog.id, 'title': blog.title, 'content': blog.content, 'author': blog.author.user_address, 'author_name': blog.author.name})
     else:
         return JsonResponse({'error': 'Invalid request method.'}, status=405)
